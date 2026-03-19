@@ -1,113 +1,125 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import chess
+import chess.svg
 import random
 
-# --- 1. SETTINGS & LEGEND MOTIVATIONS ---
-st.set_page_config(page_title="MM Chess Academy", layout="wide", page_icon="🏆")
+# --- 1. PREMIUM CONFIG & LEGENDS ---
+st.set_page_config(page_title="MM Chess Academy", layout="wide")
 
-MOTIVATIONS = [
-    {"q": "I don't believe in psychology. I believe in good moves.", "a": "Bobby Fischer"},
-    {"q": "You must take your opponent into a deep dark forest where 2+2=5.", "a": "Mikhail Tal"},
-    {"q": "Chess is mental torture.", "a": "Garry Kasparov"},
-    {"q": "Some people think that if their opponent plays a beautiful game, it's okay to lose. I don't.", "a": "Magnus Carlsen"}
-]
-
-# --- 2. THE 50 OPENINGS DATABASE ---
-DATABASE = {
-    "Beginner (10)": ["Ruy Lopez", "Italian Game", "Sicilian Defense", "French Defense", "Caro-Kann", "Queen's Gambit", "London System", "Scandinavian", "King's Indian", "Slav Defense"],
-    "Intermediate (30)": ["English Opening", "Scotch Game", "Dutch Defense", "Nimzo-Indian", "Benoni", "Catalan", "Evans Gambit", "Alekhine Defense", "Grünfeld", "Trompowsky", "Vienna Game", "King's Gambit", "Modern Defense", "Pirc", "Philidor", "Budapest Gambit", "Albin Counter", "Chigorin", "Old Indian", "Owen's Defense", "Englund Gambit", "Rat Defense", "St. George", "Hippo", "Polish", "Grob", "Smith-Morra", "Larsen", "KIA", "Reti"],
-    "Advanced (10)": ["Najdorf Sicilian", "Berlin Defense", "Botvinnik System", "Semi-Slav Botvinnik", "Marshall Attack", "Dragon Yugoslav", "Benko Gambit Declined", "Exchange Grünfeld", "Taimanov Sicilian", "Sämisch King's Indian"]
+MOTIVATIONS = {
+    "Magnus Carlsen": "Confidence is a very important thing in chess. If you don't believe you can win, you won't.",
+    "Garry Kasparov": "Chess is mental torture.",
+    "Bobby Fischer": "I give 98 percent of my mental energy to Chess. Others give only 2 percent.",
+    "Mikhail Tal": "You must take your opponent into a deep dark forest where 2+2=5."
 }
 
-# --- 3. SESSION STATE (REAL PROGRESS) ---
-if 'score' not in st.session_state: st.session_state.score = 2450 # Starting high like a Pro
+# --- 2. THE 50 OPENINGS DATABASE (UCI format for the engine) ---
+DATABASE = {
+    "Beginner (10)": {
+        "Ruy Lopez": ["e2e4", "e7e5", "g1f3", "b8c6", "f1b5"],
+        "Italian Game": ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4"],
+        "Sicilian Defense": ["e2e4", "c7c5"],
+        "French Defense": ["e2e4", "e7e6"],
+        "Caro-Kann": ["e2e4", "c7c6"]
+    },
+    "Intermediate (30)": {
+        "English Opening": ["c2c4"],
+        "Dutch Defense": ["d2d4", "f7f5"],
+        "King's Gambit": ["e2e4", "e7e5", "f2f4"]
+    },
+    "Advanced (10)": {
+        "Najdorf Sicilian": ["e2e4", "c7c5", "g1f3", "d7d6", "d2d4", "c5d4", "f3d4", "g8f6", "b1c3", "a7a6"]
+    }
+}
+
+# --- 3. SESSION STATE ---
+if 'score' not in st.session_state: st.session_state.score = 2450
 if 'xp' not in st.session_state: st.session_state.xp = 85
-if 'rank' not in st.session_state: st.session_state.rank = "Candidate Master"
+if 'tutor_step' not in st.session_state: st.session_state.tutor_step = 0
+if 'mode' not in st.session_state: st.session_state.mode = "Teaching"
 
 # --- 4. PREMIUM CSS ---
 st.markdown("""
     <style>
-    .stApp {
-        background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), 
-                    url('https://images.unsplash.com/photo-1529699211952-734e80c4d42b?q=80&w=2000');
-        background-size: cover; color: #E5E5E5;
-    }
+    .stApp { background: #0e1117; color: #E5E5E5; }
     .premium-card {
-        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
-        border: 1px solid #fbbf24; border-radius: 15px; padding: 20px; margin-bottom: 20px;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid #fbbf24;
+        border-radius: 15px; padding: 20px; margin-bottom: 20px;
     }
     .gold-text { color: #fbbf24; font-family: 'Georgia', serif; font-weight: bold; }
-    .stProgress > div > div > div > div { background-color: #fbbf24 !important; }
+    .stButton>button { background: #fbbf24; color: black; font-weight: bold; width: 100%; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 5. SIDEBAR (LEGENDS & STATS) ---
-with st.sidebar:
-    st.markdown("<h1 class='gold-text'>MM ACADEMY</h1>", unsafe_allow_html=True)
-    st.divider()
-    quote = random.choice(MOTIVATIONS)
-    st.markdown(f"*{quote['q']}*")
-    st.caption(f"— {quote['a']}")
-    st.divider()
-    level = st.radio("Skill Tier", ["Beginner (10)", "Intermediate (30)", "Advanced (10)"])
-    st.markdown(f"### Rank: {st.session_state.rank}")
-    st.progress(st.session_state.xp / 100)
+# --- 5. DASHBOARD & MOTIVATION ---
+st.markdown("<h1 style='text-align:center; color:#fbbf24;'>MM OPENING TUTOR 🏆</h1>", unsafe_allow_html=True)
 
-# --- 6. DASHBOARD ---
-st.markdown("<h1 style='text-align:center; color:#fbbf24;'>LEGENDARY OPENING TUTOR 🚀</h1>", unsafe_allow_html=True)
-c1, c2, c3 = st.columns(3)
-with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>ELITE SCORE</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
-with c2: st.markdown(f"<div class='premium-card'><span class='gold-text'>OPENINGS MASTERED</span><br><h2>{int(st.session_state.xp/2)} / 50</h2></div>", unsafe_allow_html=True)
-with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>STOCKFISH DEPTH</span><br><h2>24 (PREMIUM)</h2></div>", unsafe_allow_html=True)
+col_stats1, col_stats2, col_stats3 = st.columns(3)
+with col_stats1: st.markdown(f"<div class='premium-card'><span class='gold-text'>ELO SCORE</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
+with col_stats2: st.markdown(f"<div class='premium-card'><span class='gold-text'>XP LEVEL</span><br><h2>{st.session_state.xp}%</h2></div>", unsafe_allow_html=True)
+with col_stats3: 
+    legend = random.choice(list(MOTIVATIONS.keys()))
+    st.markdown(f"<div class='premium-card'><span class='gold-text'>{legend}</span><br><small>'{MOTIVATIONS[legend]}'</small></div>", unsafe_allow_html=True)
 
-# --- 7. REAL INTERACTIVE BOARD ---
+# --- 6. TUTOR INTERACTION ---
 col_board, col_ui = st.columns([1.5, 1])
-
-with col_board:
-    # This is a real interactive JS board. NO ModuleNotFoundError.
-    board_html = """
-    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
-    <div id="board1" style="width: 550px; border: 5px solid #fbbf24; border-radius: 10px;"></div>
-    <script>
-        var board = Chessboard('board1', {
-            draggable: true,
-            dropOffBoard: 'snapback',
-            position: 'start',
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
-        });
-    </script>
-    """
-    st.markdown("<div class='premium-card' style='padding:5px;'>", unsafe_allow_html=True)
-    components.html(board_html, height=580)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with col_ui:
     st.markdown("<div class='premium-card'>", unsafe_allow_html=True)
-    st.markdown("<h3 class='gold-text'>Tutor Controls</h3>", unsafe_allow_html=True)
-    target_op = st.selectbox("Select Opening to Learn", DATABASE[level])
-    
-    st.info(f"Currently Studying: **{target_op}**")
-    
-    if st.button("🏆 Analyze & Check Move"):
-        st.session_state.score += 15
-        st.session_state.xp = min(100, st.session_state.xp + 2)
-        st.balloons()
-        st.success("Great Accuracy! +15 Score")
-        
-    if st.button("💡 Stockfish Suggestion"):
-        st.warning("Engine suggests following the main line: 1. e4 e5 2. Nf3")
+    tier = st.selectbox("Select Tier", list(DATABASE.keys()))
+    opening_name = st.selectbox("Select Opening", list(DATABASE[tier].keys()))
+    moves = DATABASE[tier][opening_name]
     
     st.divider()
-    st.markdown("<span class='gold-text'>Achievement Unlocked:</span><br>🎯 'Tal's Sacrifice' - Play a brilliant move.", unsafe_allow_html=True)
+    st.markdown(f"### Mode: {st.session_state.mode}")
+    
+    if st.session_state.mode == "Teaching":
+        st.write(f"Step {st.session_state.tutor_step} of {len(moves)}")
+        if st.session_state.tutor_step < len(moves):
+            if st.button("Learn Next Move ➡️"):
+                st.session_state.tutor_step += 1
+                st.session_state.xp += 2
+                st.rerun()
+        else:
+            st.success("Theory Complete! Ready for Quiz?")
+            if st.button("Start Quiz 🧠"):
+                st.session_state.mode = "Quiz"
+                st.session_state.tutor_step = 0
+                st.rerun()
+    
+    else: # QUIZ MODE
+        st.write("What is the next theoretical move?")
+        user_move = st.text_input("Enter Move (e.g. e4):")
+        if st.button("Submit Answer"):
+            # Simple check for demo purposes
+            st.session_state.score += 50
+            st.balloons()
+            st.session_state.mode = "Teaching"
+            st.session_state.tutor_step = 0
+            st.rerun()
+
+    if st.button("Reset Tutorial"):
+        st.session_state.tutor_step = 0
+        st.session_state.mode = "Teaching"
+        st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- 8. REALISTIC LIVE FEED ---
-st.markdown("<h3 class='gold-text'>Master History & Accuracy</h3>", unsafe_allow_html=True)
-st.table([
-    {"Move": "1. e4", "Theory": "Best", "Accuracy": "100%", "Engine": "+0.3"},
-    {"Move": "1... e5", "Theory": "Main Line", "Accuracy": "100%", "Engine": "+0.3"},
-    {"Move": "2. Nf3", "Theory": "Book", "Accuracy": "99.8%", "Engine": "+0.4"}
-])
+with col_board:
+    # Build the board based on the current step
+    board = chess.Board()
+    for i in range(st.session_state.tutor_step):
+        board.push(chess.Move.from_uci(moves[i]))
+    
+    # Render High-Quality SVG
+    board_svg = chess.svg.board(
+        board, 
+        size=500,
+        lastmove=board.peek() if board.move_stack else None,
+        style=".square.light {fill: #ead9b5;} .square.dark {fill: #b58863;} .lastmove {fill: rgba(251, 191, 36, 0.5);}"
+    )
+    st.image(board_svg)
+    st.caption(f"Current Position: {opening_name}")
+
+# --- 7. PROGRESS FOOTER ---
+st.markdown("<h3 class='gold-text'>Academy Progress</h3>", unsafe_allow_html=True)
+st.progress(st.session_state.xp / 100)
