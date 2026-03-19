@@ -1,115 +1,99 @@
 import streamlit as st
-from streamlit_chess import st_chess
 import chess
+import chess.svg
 
 # --- 1. PREMIUM PAGE CONFIG ---
 st.set_page_config(page_title="MM Chess Academy", layout="wide", page_icon="🏆")
 
-# --- 2. THE MASTER DATABASE (Simplified for Move Testing) ---
-# We use UCI format (e.g., e2e4) because the interactive board tracks square-to-square
-OPENINGS = {
-    "White": {
-        "Beginner (5)": {
-            "Ruy Lopez": ["e2e4", "e7e5", "g1f3", "b8c6", "f1b5"],
-            "Italian Game": ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4"]
-        }
-    }
-}
-
-# --- 3. SESSION STATE (The Memory) ---
+# --- 2. SESSION STATE (The Memory) ---
+if 'board' not in st.session_state: st.session_state.board = chess.Board()
 if 'score' not in st.session_state: st.session_state.score = 240
 if 'quiz_step' not in st.session_state: st.session_state.quiz_step = 0
-if 'fen' not in st.session_state: st.session_state.fen = chess.STARTING_FEN
-if 'board_status' not in st.session_state: st.session_state.board_status = "normal"
+if 'feedback' not in st.session_state: st.session_state.feedback = "normal"
+
+# --- 3. THE MASTER DATABASE (Realistic Openings) ---
+OPENINGS = {
+    "Ruy Lopez": ["e4", "e5", "Nf3", "Nc6", "Bb5"],
+    "Italian Game": ["e4", "e5", "Nf3", "Nc6", "Bc4"],
+    "Sicilian Defense": ["e4", "c5", "Nf3", "d6", "d4"]
+}
 
 # --- 4. PREMIUM DESIGN (CSS) ---
-st.markdown("""
+st.markdown(f"""
     <style>
-    .stApp {
-        background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), 
+    .stApp {{
+        background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), 
                     url('https://images.unsplash.com/photo-1529699211952-734e80c4d42b?q=80&w=2000');
         background-size: cover; background-attachment: fixed; color: #E5E5E5;
-    }
-    .premium-card {
-        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px);
-        border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 15px; padding: 20px;
-    }
-    .gold-text { color: #fbbf24; font-weight: bold; }
-    h1, h2 { color: #fbbf24; margin-bottom: 0px; }
+    }}
+    .premium-card {{
+        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
+        border: 2px solid {'#90EE90' if st.session_state.feedback == 'correct' else '#FFB6C1' if st.session_state.feedback == 'wrong' else '#fbbf24'};
+        border-radius: 15px; padding: 20px; text-align: center;
+    }}
+    .gold-text {{ color: #fbbf24; font-weight: bold; font-family: 'Georgia', serif; }}
     </style>
     """, unsafe_allow_html=True)
 
 # --- 5. DASHBOARD ---
-st.markdown("<h1>MM Chess Academy 🚀</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#fbbf24;'>MM CHESS ACADEMY 🚀</h1>", unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
-with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>Score</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
+with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>SCORE</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
 with c2: 
-    mode = st.sidebar.selectbox("Select Mode", ["Learning Mode", "Quiz Mode"])
-    st.markdown(f"<div class='premium-card'><span class='gold-text'>Mode</span><br><h2>{mode}</h2></div>", unsafe_allow_html=True)
-with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>{st.session_state.quiz_step}/5</h2></div>", unsafe_allow_html=True)
+    mode = st.sidebar.selectbox("Training Mode", ["Learning Mode", "Quiz Mode"])
+    st.markdown(f"<div class='premium-card'><span class='gold-text'>MODE</span><br><h2>{mode}</h2></div>", unsafe_allow_html=True)
+with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>PROGRESS</span><br><h2>{st.session_state.quiz_step}/5</h2></div>", unsafe_allow_html=True)
 
-st.divider()
-
-# --- 6. INTERACTIVE BOARD ---
+# --- 6. INTERACTIVE TRAINING LOGIC ---
 col_ui, col_board = st.columns([1, 2])
 
 with col_ui:
-    selected_op = st.selectbox("Select Opening", list(OPENINGS["White"]["Beginner (5)"].keys()))
-    target_moves = OPENINGS["White"]["Beginner (5)"][selected_op]
+    selected_op = st.selectbox("Choose Opening", list(OPENINGS.keys()))
+    target_moves = OPENINGS[selected_op]
     
+    st.markdown("<div class='premium-card'>", unsafe_allow_html=True)
     if mode == "Quiz Mode":
-        st.write("### 🧠 Quiz Time!")
-        st.write("Move the piece on the board to the correct square.")
+        st.write("### 🧠 Move Piece")
+        # Creating a grid of buttons to act as the board controller
+        from_sq = st.selectbox("From Square:", ["--"] + [chess.square_name(i) for i in range(64)])
+        to_sq = st.selectbox("To Square:", ["--"] + [chess.square_name(i) for i in range(64)])
+        
+        if st.button("Confirm Move"):
+            if from_sq != "--" and to_sq != "--":
+                try:
+                    move = st.session_state.board.find_move(chess.parse_square(from_sq), chess.parse_square(to_sq))
+                    san_move = st.session_state.board.san(move)
+                    
+                    if san_move == target_moves[st.session_state.quiz_step]:
+                        st.session_state.board.push(move)
+                        st.session_state.quiz_step += 1
+                        st.session_state.score += 25
+                        st.session_state.feedback = "correct"
+                        if st.session_state.quiz_step == len(target_moves): st.balloons()
+                    else:
+                        st.session_state.feedback = "wrong"
+                except:
+                    st.session_state.feedback = "wrong"
+                st.rerun()
     else:
-        st.write("### 📖 Study the Moves")
-        st.write(f"Goal moves: {', '.join(target_moves)}")
-
-    if st.button("Reset Everything"):
-        st.session_state.fen = chess.STARTING_FEN
+        st.write("### 📖 Learning")
+        st.write(f"Moves: {' '.join(target_moves)}")
+    
+    if st.button("Reset Training"):
+        st.session_state.board.reset()
         st.session_state.quiz_step = 0
-        st.session_state.board_status = "normal"
+        st.session_state.feedback = "normal"
         st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with col_board:
-    # Set Theme based on correctness
-    if st.session_state.board_status == "correct":
-        # Light Green Theme
-        theme = {"light": "#90EE90", "dark": "#2E8B57"}
-    elif st.session_state.board_status == "wrong":
-        # Light Red Theme
-        theme = {"light": "#FFB6C1", "dark": "#8B0000"}
-    else:
-        # Gold/Wood Theme
-        theme = {"light": "#c5a059", "dark": "#8b4513"}
-
-    # The Live Moveable Board
-    board_output = st_chess(
-        fen=st.session_state.fen,
-        key="mm_chess_board",
-        board_style=theme
+    # Set dynamic board colors for Green/Red feedback
+    l_color = "#90EE90" if st.session_state.feedback == "correct" else "#FFB6C1" if st.session_state.feedback == "wrong" else "#d18b47"
+    d_color = "#2E8B57" if st.session_state.feedback == "correct" else "#8B0000" if st.session_state.feedback == "wrong" else "#ffce9e"
+    
+    board_svg = chess.svg.board(
+        st.session_state.board,
+        size=550,
+        style=f".square.light {{fill: {l_color};}} .square.dark {{fill: {d_color};}}"
     )
-
-    # Move Validation Logic
-    if board_output and board_output.get("move"):
-        user_move = board_output["move"]
-        
-        if mode == "Quiz Mode":
-            # Check if this move is next in the opening sequence
-            if st.session_state.quiz_step < len(target_moves):
-                expected_move = target_moves[st.session_state.quiz_step]
-                
-                if user_move == expected_move:
-                    st.session_state.board_status = "correct"
-                    st.session_state.quiz_step += 1
-                    st.session_state.score += 20
-                    st.session_state.fen = board_output["fen"]
-                    if st.session_state.quiz_step == len(target_moves):
-                        st.balloons()
-                else:
-                    st.session_state.board_status = "wrong"
-                    st.warning("That's not the right move for this opening! Try again.")
-                
-                st.rerun()
-        else:
-            # Free play / Learning mode
-            st.session_state.fen = board_output["fen"]
+    st.image(board_svg)
