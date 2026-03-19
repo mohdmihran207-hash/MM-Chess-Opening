@@ -18,12 +18,22 @@ OPENINGS = {
             "Vienna Game": ["e4 e5 Nc3", "Vienna Gambit", "Falkbeer", "Paulsen", "Stanley", "Mieses", "Zhuravlev"]
         },
         "Intermediate (15)": {
-            "English Opening": ["c4", "Symmetrical", "Reverse", "Anglo-Indian", "Mikenas", "Romanishin", "Ultra-Modern"],
+            "English Opening": ["c4", "Symmetrical", "Reverse Sicilian", "Anglo-Indian", "Nimzo-English", "Mikenas", "Romanishin"],
             "Scotch Game": ["e4 e5 Nf3 Nc6 d4", "Classical", "Schmidt", "Göring", "Malaniuk", "Potter", "Steinitz"],
             "King's Gambit": ["e4 e5 f4", "Accepted", "Declined", "Falkbeer", "Cunningham", "Muzio", "Kieseritzky"],
-            "Catalan": ["d4 Nf6 c4 e6 g3", "Open", "Closed", "Hungarian", "Bogo", "Modern", "Classic"],
+            "Catalan Opening": ["d4 Nf6 c4 e6 g3", "Open", "Closed", "Hungarian", "Bogo-Indian", "Modern", "Classic"],
             "Evans Gambit": ["e4 e5 Nf3 Nc6 Bc4 Bc5 b4", "Accepted", "Declined", "Tartakower", "Richardson", "Pierce", "Stone"],
-            # Add remaining 10 Intermediate White here...
+            "Scandinavian": ["e4 d5", "Main Line", "Modern", "Gubinsky-Melts", "Portuguese", "Blackburne", "Marshall"],
+            "Alekhine Defense": ["e4 Nf6", "Modern", "Exchange", "Four Pawns", "Alburt", "Scandinavian", "Mokele"],
+            "Benko Gambit": ["d4 Nf6 c4 c5 d5 b5", "Accepted", "Declined", "Zaitsev", "Nescafe Frappe", "Fully Accepted", "Modern"],
+            "Grünfeld Defense": ["d4 Nf6 c4 g6 Nc3 d5", "Exchange", "Russian", "Taimanov", "Brinckmann", "Stockholm", "Closed"],
+            "Nimzo-Indian": ["d4 Nf6 c4 e6 Nc3 Bb4", "Classical", "Rubinstein", "Sämisch", "Kasparov", "Leningrad", "Spielmann"],
+            "Dutch Defense": ["d4 f5", "Leningrad", "Stonewall", "Classical", "Staunton Gambit", "Hopton", "Ilyin-Zhenevsky"],
+            "Bird's Opening": ["f4", "Dutch Variation", "From's Gambit", "Lasker", "Williams", "Swiss", "Polar Bear"],
+            "Benoni Defense": ["d4 Nf6 c4 c5 d5 e6", "Modern", "Classical", "Four Pawns", "Taimanov", "Fianchetto", "Knight's Tour"],
+            "Trompowsky Attack": ["d4 Nf6 Bg5", "Classical", "Big Center", "Vaganian", "Poisoned Pawn", "Raptor", "Borg"],
+            "Petrov's Defense": ["e4 e5 Nf3 Nf6", "Classical", "Steinitz", "Three Knights", "Modern", "Stafford Gambit", "Karklins"]
+        },
         },
         "Advanced (5)": {
             "Reti Opening": ["Nf3 d5 c4", "King's Indian", "Symmetrical", "London", "Capablanca", "Lasker", "Advance"]
