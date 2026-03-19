@@ -1,31 +1,41 @@
 import streamlit as st
 import chess
+import chess.svg
 
-# Branding your app
+# Branding
 st.set_page_config(page_title="MM Chess", page_icon="♟️")
 st.title("MM: Chess Opening Learner")
 
-# Initialize the board state
-if 'fen' not in st.session_state:
-    st.session_state.fen = chess.STARTING_FEN
+# Start the game logic
+if 'board' not in st.session_state:
+    st.session_state.board = chess.Board()
 
-# Draw the board (Text version for the first test)
-board = chess.Board(st.session_state.fen)
-st.markdown("### Current Board")
-st.code(board)
+# Create two columns: one for the board, one for info
+col1, col2 = st.columns([2, 1])
 
-# Input for moves
-move = st.text_input("Enter your move (e.g., e4, d4, Nf3):")
+with col1:
+    # This creates a clean SVG image of the board
+    board_svg = chess.svg.board(st.session_state.board, size=400)
+    st.image(board_svg, use_container_width=True)
 
-if st.button("Play Move"):
-    try:
-        board.push_san(move)
-        st.session_state.fen = board.fen()
-        st.success(f"Move {move} played!")
+with col2:
+    st.subheader("Controls")
+    move = st.text_input("Enter Move (e.g. e4, Nf3):", key="move_input")
+    
+    if st.button("Play Move"):
+        try:
+            st.session_state.board.push_san(move)
+            st.rerun()
+        except:
+            st.error("Invalid move!")
+
+    if st.button("Reset MM Board"):
+        st.session_state.board.reset()
         st.rerun()
-    except:
-        st.error("Invalid move. Try something like 'e4'.")
 
-if st.button("Reset Game"):
-    st.session_state.fen = chess.STARTING_FEN
-    st.rerun()
+# This part will tell you the Opening Name (Basic version)
+fen = st.session_state.board.fen()
+if fen.startswith("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"):
+    st.info("Opening: King's Pawn Opening (1. e4)")
+elif fen.startswith("rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR"):
+    st.info("Opening: Queen's Pawn Opening (1. d4)")
