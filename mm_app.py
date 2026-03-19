@@ -96,9 +96,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. SESSION STATE (Score Tracking) ---
+# --- 4. SESSION STATE (Progress Tracking) ---
 if 'score' not in st.session_state: st.session_state.score = 240
-if 'lessons' not in st.session_state: st.session_state.lessons = 12
+if 'lessons_done' not in st.session_state: st.session_state.lessons_done = 12
 
 # --- 5. SIDEBAR ---
 with st.sidebar:
@@ -112,8 +112,30 @@ with st.sidebar:
 st.markdown("<h1>Future Grandmaster 🚀</h1>", unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
 with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>Score</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
-with c2: st.markdown(f"<div class='premium-card'><span class='gold-text'>Lessons Done</span><br><h2>{st.session_state.lessons} / 50</h2></div>", unsafe_allow_html=True)
-with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>{int((st.session_state.lessons/50)*100)}%</h2></div>", unsafe_allow_html=True)
+with c2: st.markdown(f"<div class='premium-card'><span class='gold-text'>Lessons Done</span><br><h2>{st.session_state.lessons_done} / 50</h2></div>", unsafe_allow_html=True)
+with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>{int((st.session_state.lessons_done/50)*100)}%</h2></div>", unsafe_allow_html=True)
 
 # --- 7. SELECTOR & BOARD ---
-available = OPENINGS.
+available = OPENINGS.get(side, {}).get(level, {})
+if available:
+    col_ui, col_board = st.columns([1, 1.5])
+    with col_ui:
+        st.subheader("Explore Theory")
+        selected_op = st.selectbox("Select Opening", list(available.keys()))
+        data = available[selected_op]
+        st.markdown(f"<div class='premium-card'><b class='gold-text'>{selected_op}</b></div>", unsafe_allow_html=True)
+        v_choice = st.selectbox("Choose Variation", data[1:])
+        
+        if st.button("Practice Mode"):
+            st.session_state.score += 10
+            st.session_state.lessons_done = min(50, st.session_state.lessons_done + 1)
+            st.balloons()
+            st.rerun()
+            
+        st.button("Learning Mode")
+        
+    with col_board:
+        board = chess.Board()
+        for m in data[0].split(): board.push_san(m)
+        board_svg = chess.svg.board(board, size=450, style=".square.light {fill: #c5a059;} .square.dark {fill: #8b4513;}")
+        st.image(board_svg)
