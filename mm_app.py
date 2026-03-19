@@ -97,4 +97,52 @@ with col_board:
     moves_json = json.dumps(theory_moves)
     
     board_html = f"""
-    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <div id="board" style="width: 580px; border: 4px solid #fbbf24; border-radius: 15px; box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);"></div>
+    <div id="status" style="color: #fbbf24; margin-top: 15px; font-weight: bold; font-size: 1.2em;"></div>
+
+    <script>
+        var game = new Chess();
+        var theory = {moves_json};
+        var mode = "{st.session_state.mode}";
+        var step = 0;
+
+        var board = Chessboard('board', {{
+            draggable: true,
+            position: 'start',
+            onDrop: handleMove,
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{{piece}}.png'
+        }});
+
+        function handleMove(source, target) {{
+            var move = game.move({{ from: source, to: target, promotion: 'q' }});
+            if (move === null) return 'snapback';
+
+            // Verify against theory
+            if (move.san === theory[step]) {{
+                step++;
+                document.getElementById('status').innerText = "✅ CORRECT";
+                
+                // If Studying, auto-play the response
+                if (mode === "STUDY" && step < theory.length) {{
+                    setTimeout(() => {{
+                        game.move(theory[step]);
+                        board.position(game.fen());
+                        step++;
+                    }}, 600);
+                }}
+            }} else {{
+                game.undo();
+                document.getElementById('status').innerText = "❌ WRONG! NOT THE THEORY.";
+                return 'snapback';
+            }}
+        }}
+    </script>
+    """
+    st.markdown("<div class='premium-card' style='display:flex; justify-content:center;'>", unsafe_allow_html=True)
+    components.html(board_html, height=750)
+    st.markdown("</div>", unsafe_allow_html=True)
