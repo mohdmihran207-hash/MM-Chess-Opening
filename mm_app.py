@@ -1,89 +1,28 @@
 import streamlit as st
+from streamlit_chess import st_chess
 import chess
-import chess.svg
-import base64
 
 # --- 1. PREMIUM PAGE CONFIG ---
 st.set_page_config(page_title="MM Chess Academy", layout="wide", page_icon="🏆")
 
-# --- 2. SESSION STATE (The "Brain" of the App) ---
-# This makes the score and progress real!
-if 'score' not in st.session_state:
-    st.session_state.score = 240
-if 'completed_lessons' not in st.session_state:
-    st.session_state.completed_lessons = set() # Tracks unique openings finished
-
-# --- 3. THE MASTER DATABASE ---
+# --- 2. THE MASTER DATABASE (Simplified for Move Testing) ---
+# We use UCI format (e.g., e2e4) because the interactive board tracks square-to-square
 OPENINGS = {
     "White": {
         "Beginner (5)": {
-            "Ruy Lopez": ["e4 e5 Nf3 Nc6 Bb5", "Main Line", "Exchange", "Berlin", "Arkhangelsk", "Bird's", "Steinitz"],
-            "Italian Game": ["e4 e5 Nf3 Nc6 Bc4", "Main Line", "Evans Gambit", "Fried Liver", "Giuoco Piano", "Two Knights", "Deutz"],
-            "Queen's Gambit": ["d4 d5 c4", "Accepted", "Declined", "Slav", "Chigorin", "Albin Counter", "Austrian"],
-            "London System": ["d4 Nf6 Bf4", "Classical", "Jobava", "Indian Setup", "Anti-Grünfeld", "Pseudo-Catalan", "Rapport"],
-            "Vienna Game": ["e4 e5 Nc3", "Vienna Gambit", "Falkbeer", "Paulsen", "Stanley", "Mieses", "Zhuravlev"]
-        },
-        "Intermediate (15)": {
-            "English Opening": ["c4", "Symmetrical", "Reverse Sicilian", "Anglo-Indian", "Nimzo-English", "Mikenas", "Romanishin"],
-            "Scotch Game": ["e4 e5 Nf3 Nc6 d4", "Classical", "Schmidt", "Göring", "Malaniuk", "Potter", "Steinitz"],
-            "King's Gambit": ["e4 e5 f4", "Accepted", "Declined", "Falkbeer", "Cunningham", "Muzio", "Kieseritzky"],
-            "Catalan Opening": ["d4 Nf6 c4 e6 g3", "Open", "Closed", "Hungarian", "Bogo-Indian", "Modern", "Classic"],
-            "Evans Gambit": ["e4 e5 Nf3 Nc6 Bc4 Bc5 b4", "Accepted", "Declined", "Tartakower", "Richardson", "Pierce", "Stone"],
-            "Scandinavian": ["e4 d5", "Main Line", "Modern", "Gubinsky-Melts", "Portuguese", "Blackburne", "Marshall"],
-            "Alekhine Defense": ["e4 Nf6", "Modern", "Exchange", "Four Pawns", "Alburt", "Scandinavian", "Mokele"],
-            "Benko Gambit": ["d4 Nf6 c4 c5 d5 b5", "Accepted", "Declined", "Zaitsev", "Nescafe Frappe", "Fully Accepted", "Modern"],
-            "Grünfeld Defense": ["d4 Nf6 c4 g6 Nc3 d5", "Exchange", "Russian", "Taimanov", "Brinckmann", "Stockholm", "Closed"],
-            "Nimzo-Indian": ["d4 Nf6 c4 e6 Nc3 Bb4", "Classical", "Rubinstein", "Sämisch", "Kasparov", "Leningrad", "Spielmann"],
-            "Dutch Defense": ["d4 f5", "Leningrad", "Stonewall", "Classical", "Staunton Gambit", "Hopton", "Ilyin-Zhenevsky"],
-            "Bird's Opening": ["f4", "Dutch Variation", "From's Gambit", "Lasker", "Williams", "Swiss", "Polar Bear"],
-            "Benoni Defense": ["d4 Nf6 c4 c5 d5 e6", "Modern", "Classical", "Four Pawns", "Taimanov", "Fianchetto", "Knight's Tour"],
-            "Trompowsky Attack": ["d4 Nf6 Bg5", "Classical", "Big Center", "Vaganian", "Poisoned Pawn", "Raptor", "Borg"],
-            "Petrov's Defense": ["e4 e5 Nf3 Nf6", "Classical", "Steinitz", "Three Knights", "Modern", "Stafford Gambit", "Karklins"]
-        },
-        "Advanced (5)": {
-            "Reti Opening": ["Nf3 d5 c4", "King's Indian", "Symmetrical", "London", "Capablanca", "Lasker", "Advance"],
-            "King's Indian Attack": ["Nf3 d5 g3", "Closed", "French Structure", "Sicilian Structure", "Yugoslav", "Spassky", "Modern"],
-            "Larsen's Opening": ["b3", "Classical", "Modern", "Indian", "English", "Symmetrical", "Polish"],
-            "Smith-Morra Gambit": ["e4 c5 d4 cxd4 c3", "Accepted", "Declined", "Siberian Trap", "Chicago", "Finegold", "Morphy"],
-            "Grob's Attack": ["g4", "Standard", "Romford", "Spike", "Keene", "Zilbermints", "Fritz"]
-        }
-    },
-    "Black": {
-        "Beginner (5)": {
-            "Sicilian Defense": ["e4 c5", "Najdorf", "Dragon", "Scheveningen", "Classical", "Alapin", "Closed"],
-            "French Defense": ["e4 e6", "Winawer", "Classical", "Advance", "Exchange", "Tarrasch", "Burn"],
-            "Caro-Kann": ["e4 c6", "Classical", "Advance", "Exchange", "Panov", "Two Knights", "Tartakower"],
-            "Scandinavian": ["e4 d5", "Main Line", "Modern", "Gubinsky-Melts", "Portuguese", "Blackburne", "Marshall"],
-            "King's Indian": ["d4 Nf6 c4 g6", "Classical", "Sämisch", "Four Pawns", "Averbakh", "Fianchetto", "Makogonov"]
-        },
-        "Intermediate (15)": {
-            "Modern Defense": ["e4 g6 d4 Bg7", "Standard", "Averbakh", "Pirc Transition", "Three Pawns", "Gurgenidze", "Mad Dog"],
-            "Pirc Defense": ["e4 d6 d4 Nf6 Nc3 g6", "Austrian Attack", "Classical", "150 Attack", "Byrne", "Argentine", "Holmov"],
-            "Nimzowitsch Defense": ["e4 Nc6", "Kennedy", "Declined", "Scandinavian", "Lean", "Colorado", "Wheeler"],
-            "Philidor Defense": ["e4 e5 Nf3 d6", "Antoshin", "Hanham", "Exchange", "Larsen", "Berger", "Lion"],
-            "Bogo-Indian": ["d4 Nf6 c4 e6 Nf3 Bb4+", "Nimzowitsch", "Vitolinsh", "Wade", "Grunfeld-style", "Modern", "Exchange"],
-            "Chigorin Defense": ["d4 d5 c4 Nc6", "Janowski", "Costa", "Romford", "Alatortsev", "Leningrad", "Marshall"],
-            "Albin Counter-Gambit": ["d4 d5 c4 e5", "Lasker Trap", "Spassky", "Keres", "Modern", "Exchange", "Janowski"],
-            "Budapest Gambit": ["d4 Nf6 c4 e5", "Adler", "Rubinstein", "Fajarowicz", "Alekhine", "Sajtar", "Main Line"],
-            "Old Indian": ["d4 Nf6 c4 d6", "Janowski", "Ukrainian", "Tartakower", "Main Line", "Exchange", "Fianchetto"],
-            "Owen's Defense": ["e4 b6", "Guatemala", "Matov", "Wind", "Smith", "Modern", "Classical"],
-            "Englund Gambit": ["d4 e5", "Soller", "Felbecker", "Zilbermints", "Hartlaub", "Blackburne", "Main Line"],
-            "Rat Defense": ["d4 d6", "Spike", "Balogh", "English", "Lisitsin", "Modern", "Classical"],
-            "St. George Defense": ["e4 a6", "Three Pawns", "Italian Style", "Sicilian Style", "Classic", "Modern", "Transfer"],
-            "Hippopotamus": ["e4 e6 d4 d6", "Closed", "Flexible", "Symmetrical", "Fianchetto", "Mountain", "River"],
-            "Polish Defense": ["d4 b5", "Spassky", "Tartakower", "Modern", "Exchange", "Symmetrical", "Classical"]
-        },
-        "Advanced (5)": {
-            "Grunfeld Defense": ["d4 Nf6 c4 g6 Nc3 d5", "Exchange", "Russian", "Taimanov", "Brinckmann", "Stockholm", "Closed"],
-            "Nimzo-Indian": ["d4 Nf6 c4 e6 Nc3 Bb4", "Classical", "Rubinstein", "Sämisch", "Kasparov", "Leningrad", "Spielmann"],
-            "Benoni Defense": ["d4 Nf6 c4 c5 d5 e6", "Modern", "Classical", "Four Pawns", "Taimanov", "Fianchetto", "Knight's Tour"],
-            "Dutch Defense": ["d4 f5", "Leningrad", "Stonewall", "Classical", "Staunton Gambit", "Hopton", "Ilyin-Zhenevsky"],
-            "Benko Gambit": ["d4 Nf6 c4 c5 d5 b5", "Accepted", "Declined", "Zaitsev", "Nescafe Frappe", "Fully Accepted", "Modern"]
+            "Ruy Lopez": ["e2e4", "e7e5", "g1f3", "b8c6", "f1b5"],
+            "Italian Game": ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4"]
         }
     }
 }
 
-# --- 4. THE PREMIUM CSS ---
+# --- 3. SESSION STATE (The Memory) ---
+if 'score' not in st.session_state: st.session_state.score = 240
+if 'quiz_step' not in st.session_state: st.session_state.quiz_step = 0
+if 'fen' not in st.session_state: st.session_state.fen = chess.STARTING_FEN
+if 'board_status' not in st.session_state: st.session_state.board_status = "normal"
+
+# --- 4. PREMIUM DESIGN (CSS) ---
 st.markdown("""
     <style>
     .stApp {
@@ -93,67 +32,84 @@ st.markdown("""
     }
     .premium-card {
         background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px);
-        border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 15px;
-        padding: 20px; margin-bottom: 15px;
+        border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 15px; padding: 20px;
     }
-    .gold-text { color: #fbbf24; font-family: 'Georgia', serif; font-weight: bold; }
-    h1, h2, h3 { color: #fbbf24; }
-    .stButton>button { background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; color: white; width: 100%; border-radius: 8px; }
-    .stButton>button:hover { background: #fbbf24 !important; color: black !important; }
-    .stProgress > div > div > div > div { background-color: #fbbf24 !important; }
+    .gold-text { color: #fbbf24; font-weight: bold; }
+    h1, h2 { color: #fbbf24; margin-bottom: 0px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 5. SIDEBAR ---
-with st.sidebar:
-    st.markdown("<h1 style='text-align:center;'>MM Chess</h1><p style='text-align:center; color:#fbbf24;'>ACADEMY</p>", unsafe_allow_html=True)
-    st.divider()
-    st.markdown("<div class='premium-card'><span class='gold-text'>Motivation</span><br><i>'Push yourself every day.'</i></div>", unsafe_allow_html=True)
-    side = st.radio("Choose Side", ["White", "Black"])
-    level = st.radio("Skill Level", ["Beginner (5)", "Intermediate (15)", "Advanced (5)"])
-
-# --- 6. REALISTIC DASHBOARD ---
-st.markdown("<h1>Future Grandmaster 🚀</h1>", unsafe_allow_html=True)
-
-# Calculate Realistic Progress
-total_openings = 50 
-lessons_done = len(st.session_state.completed_lessons)
-progress_percentage = int((lessons_done / total_openings) * 100)
-
+# --- 5. DASHBOARD ---
+st.markdown("<h1>MM Chess Academy 🚀</h1>", unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
 with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>Score</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
-with c2: st.markdown(f"<div class='premium-card'><span class='gold-text'>Lessons Done</span><br><h2>{lessons_done} / {total_openings}</h2></div>", unsafe_allow_html=True)
-with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>{progress_percentage}%</h2></div>", unsafe_allow_html=True)
+with c2: 
+    mode = st.sidebar.selectbox("Select Mode", ["Learning Mode", "Quiz Mode"])
+    st.markdown(f"<div class='premium-card'><span class='gold-text'>Mode</span><br><h2>{mode}</h2></div>", unsafe_allow_html=True)
+with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>{st.session_state.quiz_step}/5</h2></div>", unsafe_allow_html=True)
 
-st.progress(lessons_done / total_openings)
+st.divider()
 
-# --- 7. SELECTOR & BOARD ---
-available = OPENINGS.get(side, {}).get(level, {})
-if available:
-    col_ui, col_board = st.columns([1, 1.5])
-    with col_ui:
-        st.subheader("Explore Theory")
-        selected_op = st.selectbox("Select Opening", list(available.keys()))
-        data = available[selected_op]
+# --- 6. INTERACTIVE BOARD ---
+col_ui, col_board = st.columns([1, 2])
+
+with col_ui:
+    selected_op = st.selectbox("Select Opening", list(OPENINGS["White"]["Beginner (5)"].keys()))
+    target_moves = OPENINGS["White"]["Beginner (5)"][selected_op]
+    
+    if mode == "Quiz Mode":
+        st.write("### 🧠 Quiz Time!")
+        st.write("Move the piece on the board to the correct square.")
+    else:
+        st.write("### 📖 Study the Moves")
+        st.write(f"Goal moves: {', '.join(target_moves)}")
+
+    if st.button("Reset Everything"):
+        st.session_state.fen = chess.STARTING_FEN
+        st.session_state.quiz_step = 0
+        st.session_state.board_status = "normal"
+        st.rerun()
+
+with col_board:
+    # Set Theme based on correctness
+    if st.session_state.board_status == "correct":
+        # Light Green Theme
+        theme = {"light": "#90EE90", "dark": "#2E8B57"}
+    elif st.session_state.board_status == "wrong":
+        # Light Red Theme
+        theme = {"light": "#FFB6C1", "dark": "#8B0000"}
+    else:
+        # Gold/Wood Theme
+        theme = {"light": "#c5a059", "dark": "#8b4513"}
+
+    # The Live Moveable Board
+    board_output = st_chess(
+        fen=st.session_state.fen,
+        key="mm_chess_board",
+        board_style=theme
+    )
+
+    # Move Validation Logic
+    if board_output and board_output.get("move"):
+        user_move = board_output["move"]
         
-        st.markdown(f"<div class='premium-card'><b class='gold-text'>{selected_op}</b><br><small>Status: {'✅ Completed' if selected_op in st.session_state.completed_lessons else '⏳ In Progress'}</small></div>", unsafe_allow_html=True)
-        v_choice = st.selectbox("Choose Variation", data[1:])
-        
-        if st.button("🏆 Mark as Completed"):
-            if selected_op not in st.session_state.completed_lessons:
-                st.session_state.completed_lessons.add(selected_op)
-                st.session_state.score += 50 # Reward for finishing a lesson
-                st.balloons()
-                st.success("Lesson Complete! +50 Points")
+        if mode == "Quiz Mode":
+            # Check if this move is next in the opening sequence
+            if st.session_state.quiz_step < len(target_moves):
+                expected_move = target_moves[st.session_state.quiz_step]
+                
+                if user_move == expected_move:
+                    st.session_state.board_status = "correct"
+                    st.session_state.quiz_step += 1
+                    st.session_state.score += 20
+                    st.session_state.fen = board_output["fen"]
+                    if st.session_state.quiz_step == len(target_moves):
+                        st.balloons()
+                else:
+                    st.session_state.board_status = "wrong"
+                    st.warning("That's not the right move for this opening! Try again.")
+                
                 st.rerun()
-            else:
-                st.info("You already finished this lesson!")
-
-        st.button("Learning Mode")
-        st.button("Practice Mode")
-        
-    with col_board:
-        board = chess.Board()
-        for m in data[0].split(): board.push_san(m)
-        board_svg = chess.svg.board(board, size=450, style=".square.light {fill: #c5a059;} .square.dark {fill: #8b4513;}")
-        st.image(board_svg)
+        else:
+            # Free play / Learning mode
+            st.session_state.fen = board_output["fen"]
