@@ -6,7 +6,7 @@ import base64
 # --- 1. PREMIUM PAGE CONFIG ---
 st.set_page_config(page_title="MM Chess Academy", layout="wide", page_icon="🏆")
 
-# --- 2. THE MASTER DATABASE (40 OPENINGS) ---
+# --- 2. THE MASTER DATABASE (50 OPENINGS TOTAL) ---
 OPENINGS = {
     "White": {
         "Beginner (5)": {
@@ -32,6 +32,13 @@ OPENINGS = {
             "Benoni Defense": ["d4 Nf6 c4 c5 d5 e6", "Modern", "Classical", "Four Pawns", "Taimanov", "Fianchetto", "Knight's Tour"],
             "Trompowsky Attack": ["d4 Nf6 Bg5", "Classical", "Big Center", "Vaganian", "Poisoned Pawn", "Raptor", "Borg"],
             "Petrov's Defense": ["e4 e5 Nf3 Nf6", "Classical", "Steinitz", "Three Knights", "Modern", "Stafford Gambit", "Karklins"]
+        },
+        "Advanced (5)": {
+            "Reti Opening": ["Nf3 d5 c4", "King's Indian", "Symmetrical", "London", "Capablanca", "Lasker", "Advance"],
+            "King's Indian Attack": ["Nf3 d5 g3", "Closed", "French Structure", "Sicilian Structure", "Yugoslav", "Spassky", "Modern"],
+            "Larsen's Opening": ["b3", "Classical", "Modern", "Indian", "English", "Symmetrical", "Polish"],
+            "Smith-Morra Gambit": ["e4 c5 d4 cxd4 c3", "Accepted", "Declined", "Siberian Trap", "Chicago", "Finegold", "Morphy"],
+            "Grob's Attack": ["g4", "Standard", "Romford", "Spike", "Keene", "Zilbermints", "Fritz"]
         }
     },
     "Black": {
@@ -58,6 +65,13 @@ OPENINGS = {
             "St. George Defense": ["e4 a6", "Three Pawns", "Italian Style", "Sicilian Style", "Classic", "Modern", "Transfer"],
             "Hippopotamus": ["e4 e6 d4 d6", "Closed", "Flexible", "Symmetrical", "Fianchetto", "Mountain", "River"],
             "Polish Defense": ["d4 b5", "Spassky", "Tartakower", "Modern", "Exchange", "Symmetrical", "Classical"]
+        },
+        "Advanced (5)": {
+            "Grunfeld Defense": ["d4 Nf6 c4 g6 Nc3 d5", "Exchange", "Russian", "Taimanov", "Brinckmann", "Stockholm", "Closed"],
+            "Nimzo-Indian": ["d4 Nf6 c4 e6 Nc3 Bb4", "Classical", "Rubinstein", "Sämisch", "Kasparov", "Leningrad", "Spielmann"],
+            "Benoni Defense": ["d4 Nf6 c4 c5 d5 e6", "Modern", "Classical", "Four Pawns", "Taimanov", "Fianchetto", "Knight's Tour"],
+            "Dutch Defense": ["d4 f5", "Leningrad", "Stonewall", "Classical", "Staunton Gambit", "Hopton", "Ilyin-Zhenevsky"],
+            "Benko Gambit": ["d4 Nf6 c4 c5 d5 b5", "Accepted", "Declined", "Zaitsev", "Nescafe Frappe", "Fully Accepted", "Modern"]
         }
     }
 }
@@ -78,39 +92,28 @@ st.markdown("""
     .gold-text { color: #fbbf24; font-family: 'Georgia', serif; font-weight: bold; }
     h1, h2, h3 { color: #fbbf24; }
     .stButton>button { background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; color: white; width: 100%; border-radius: 8px; }
-    .stButton>button:hover { background: #fbbf24; color: black; }
+    .stButton>button:hover { background: #fbbf24 !important; color: black !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. SIDEBAR ---
+# --- 4. SESSION STATE (Score Tracking) ---
+if 'score' not in st.session_state: st.session_state.score = 240
+if 'lessons' not in st.session_state: st.session_state.lessons = 12
+
+# --- 5. SIDEBAR ---
 with st.sidebar:
     st.markdown("<h1 style='text-align:center;'>MM Chess</h1><p style='text-align:center; color:#fbbf24;'>ACADEMY</p>", unsafe_allow_html=True)
     st.divider()
     st.markdown("<div class='premium-card'><span class='gold-text'>Motivation</span><br><i>'Push yourself every day.'</i></div>", unsafe_allow_html=True)
     side = st.radio("Choose Side", ["White", "Black"])
-    level = st.radio("Skill Level", ["Beginner (5)", "Intermediate (15)"])
+    level = st.radio("Skill Level", ["Beginner (5)", "Intermediate (15)", "Advanced (5)"])
 
-# --- 5. DASHBOARD ---
+# --- 6. DASHBOARD ---
 st.markdown("<h1>Future Grandmaster 🚀</h1>", unsafe_allow_html=True)
 c1, c2, c3 = st.columns(3)
-with c1: st.markdown("<div class='premium-card'><span class='gold-text'>Score</span><br><h2>240</h2></div>", unsafe_allow_html=True)
-with c2: st.markdown("<div class='premium-card'><span class='gold-text'>Lessons Done</span><br><h2>12 / 40</h2></div>", unsafe_allow_html=True)
-with c3: st.markdown("<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>40%</h2></div>", unsafe_allow_html=True)
+with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>Score</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
+with c2: st.markdown(f"<div class='premium-card'><span class='gold-text'>Lessons Done</span><br><h2>{st.session_state.lessons} / 50</h2></div>", unsafe_allow_html=True)
+with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>{int((st.session_state.lessons/50)*100)}%</h2></div>", unsafe_allow_html=True)
 
-# --- 6. SELECTOR & BOARD ---
-available = OPENINGS.get(side, {}).get(level, {})
-if available:
-    col_ui, col_board = st.columns([1, 1.5])
-    with col_ui:
-        st.subheader("Explore Theory")
-        selected_op = st.selectbox("Select Opening", list(available.keys()))
-        data = available[selected_op]
-        st.markdown(f"<div class='premium-card'><b class='gold-text'>{selected_op}</b></div>", unsafe_allow_html=True)
-        v_choice = st.selectbox("Choose Variation", data[1:])
-        st.button("Learning Mode")
-        if st.button("Practice Mode"): st.balloons()
-    with col_board:
-        board = chess.Board()
-        for m in data[0].split(): board.push_san(m)
-        board_svg = chess.svg.board(board, size=450, style=".square.light {fill: #c5a059;} .square.dark {fill: #8b4513;}")
-        st.image(board_svg)
+# --- 7. SELECTOR & BOARD ---
+available = OPENINGS.
