@@ -6,8 +6,7 @@ import base64
 # --- 1. PREMIUM PAGE CONFIG ---
 st.set_page_config(page_title="MM Chess Academy", layout="wide", page_icon="🏆")
 
-# --- 2. THE COMPLETE OPENING DATABASE ---
-# (I've structured this so you can see all 20 White / 20 Black slots)
+# --- 2. THE MASTER DATABASE (40 OPENINGS) ---
 OPENINGS = {
     "White": {
         "Beginner (5)": {
@@ -33,10 +32,6 @@ OPENINGS = {
             "Benoni Defense": ["d4 Nf6 c4 c5 d5 e6", "Modern", "Classical", "Four Pawns", "Taimanov", "Fianchetto", "Knight's Tour"],
             "Trompowsky Attack": ["d4 Nf6 Bg5", "Classical", "Big Center", "Vaganian", "Poisoned Pawn", "Raptor", "Borg"],
             "Petrov's Defense": ["e4 e5 Nf3 Nf6", "Classical", "Steinitz", "Three Knights", "Modern", "Stafford Gambit", "Karklins"]
-        },
-        },
-        "Advanced (5)": {
-            "Reti Opening": ["Nf3 d5 c4", "King's Indian", "Symmetrical", "London", "Capablanca", "Lasker", "Advance"]
         }
     },
     "Black": {
@@ -44,35 +39,46 @@ OPENINGS = {
             "Sicilian Defense": ["e4 c5", "Najdorf", "Dragon", "Scheveningen", "Classical", "Alapin", "Closed"],
             "French Defense": ["e4 e6", "Winawer", "Classical", "Advance", "Exchange", "Tarrasch", "Burn"],
             "Caro-Kann": ["e4 c6", "Classical", "Advance", "Exchange", "Panov", "Two Knights", "Tartakower"],
-            "Scandinavian": ["e4 d5", "Main Line", "Modern", "Gubinsky", "Portuguese", "Blackburne", "Marshall"],
+            "Scandinavian": ["e4 d5", "Main Line", "Modern", "Gubinsky-Melts", "Portuguese", "Blackburne", "Marshall"],
             "King's Indian": ["d4 Nf6 c4 g6", "Classical", "Sämisch", "Four Pawns", "Averbakh", "Fianchetto", "Makogonov"]
+        },
+        "Intermediate (15)": {
+            "Modern Defense": ["e4 g6 d4 Bg7", "Standard", "Averbakh", "Pirc Transition", "Three Pawns", "Gurgenidze", "Mad Dog"],
+            "Pirc Defense": ["e4 d6 d4 Nf6 Nc3 g6", "Austrian Attack", "Classical", "150 Attack", "Byrne", "Argentine", "Holmov"],
+            "Nimzowitsch Defense": ["e4 Nc6", "Kennedy", "Declined", "Scandinavian", "Lean", "Colorado", "Wheeler"],
+            "Philidor Defense": ["e4 e5 Nf3 d6", "Antoshin", "Hanham", "Exchange", "Larsen", "Berger", "Lion"],
+            "Bogo-Indian": ["d4 Nf6 c4 e6 Nf3 Bb4+", "Nimzowitsch", "Vitolinsh", "Wade", "Grunfeld-style", "Modern", "Exchange"],
+            "Chigorin Defense": ["d4 d5 c4 Nc6", "Janowski", "Costa", "Romford", "Alatortsev", "Leningrad", "Marshall"],
+            "Albin Counter-Gambit": ["d4 d5 c4 e5", "Lasker Trap", "Spassky", "Keres", "Modern", "Exchange", "Janowski"],
+            "Budapest Gambit": ["d4 Nf6 c4 e5", "Adler", "Rubinstein", "Fajarowicz", "Alekhine", "Sajtar", "Main Line"],
+            "Old Indian": ["d4 Nf6 c4 d6", "Janowski", "Ukrainian", "Tartakower", "Main Line", "Exchange", "Fianchetto"],
+            "Owen's Defense": ["e4 b6", "Guatemala", "Matov", "Wind", "Smith", "Modern", "Classical"],
+            "Englund Gambit": ["d4 e5", "Soller", "Felbecker", "Zilbermints", "Hartlaub", "Blackburne", "Main Line"],
+            "Rat Defense": ["d4 d6", "Spike", "Balogh", "English", "Lisitsin", "Modern", "Classical"],
+            "St. George Defense": ["e4 a6", "Three Pawns", "Italian Style", "Sicilian Style", "Classic", "Modern", "Transfer"],
+            "Hippopotamus": ["e4 e6 d4 d6", "Closed", "Flexible", "Symmetrical", "Fianchetto", "Mountain", "River"],
+            "Polish Defense": ["d4 b5", "Spassky", "Tartakower", "Modern", "Exchange", "Symmetrical", "Classical"]
         }
     }
 }
 
-# --- 3. THE PREMIUM CSS (The "Look" is back!) ---
+# --- 3. THE PREMIUM CSS ---
 st.markdown("""
     <style>
     .stApp {
         background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), 
                     url('https://images.unsplash.com/photo-1529699211952-734e80c4d42b?q=80&w=2000');
-        background-size: cover;
-        background-attachment: fixed;
-        color: #E5E5E5;
+        background-size: cover; background-attachment: fixed; color: #E5E5E5;
     }
     .premium-card {
-        background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(251, 191, 36, 0.3);
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 15px;
+        background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px);
+        border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 15px;
+        padding: 20px; margin-bottom: 15px;
     }
     .gold-text { color: #fbbf24; font-family: 'Georgia', serif; font-weight: bold; }
     h1, h2, h3 { color: #fbbf24; }
-    
-    /* Custom Board Styling */
-    .stImage { border: 2px solid #fbbf24; border-radius: 10px; padding: 5px; background: rgba(0,0,0,0.5); }
+    .stButton>button { background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; color: white; width: 100%; border-radius: 8px; }
+    .stButton>button:hover { background: #fbbf24; color: black; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -81,52 +87,30 @@ with st.sidebar:
     st.markdown("<h1 style='text-align:center;'>MM Chess</h1><p style='text-align:center; color:#fbbf24;'>ACADEMY</p>", unsafe_allow_html=True)
     st.divider()
     st.markdown("<div class='premium-card'><span class='gold-text'>Motivation</span><br><i>'Push yourself every day.'</i></div>", unsafe_allow_html=True)
-    st.divider()
     side = st.radio("Choose Side", ["White", "Black"])
-    level = st.radio("Skill Level", ["Beginner (5)", "Intermediate (15)", "Advanced (5)"])
+    level = st.radio("Skill Level", ["Beginner (5)", "Intermediate (15)"])
 
 # --- 5. DASHBOARD ---
 st.markdown("<h1>Future Grandmaster 🚀</h1>", unsafe_allow_html=True)
-
-# Stats Row
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3 = st.columns(3)
 with c1: st.markdown("<div class='premium-card'><span class='gold-text'>Score</span><br><h2>240</h2></div>", unsafe_allow_html=True)
-with c2: st.markdown("<div class='premium-card'><span class='gold-text'>Lessons</span><br><h2>12 / 40</h2></div>", unsafe_allow_html=True)
+with c2: st.markdown("<div class='premium-card'><span class='gold-text'>Lessons Done</span><br><h2>12 / 40</h2></div>", unsafe_allow_html=True)
 with c3: st.markdown("<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>40%</h2></div>", unsafe_allow_html=True)
-with c4: st.markdown("<div class='premium-card'><span class='gold-text'>Goal</span><br><h2>Mastery</h2></div>", unsafe_allow_html=True)
 
-st.divider()
-
-# --- 6. OPENING SELECTOR ---
+# --- 6. SELECTOR & BOARD ---
 available = OPENINGS.get(side, {}).get(level, {})
-
 if available:
-    col_list, col_board = st.columns([1, 1.5])
-    
-    with col_list:
-        st.subheader(f"Top {side} Openings")
+    col_ui, col_board = st.columns([1, 1.5])
+    with col_ui:
+        st.subheader("Explore Theory")
         selected_op = st.selectbox("Select Opening", list(available.keys()))
-        
-        # Get data for selected opening
-        move_set = available[selected_op]
-        starting_moves = move_set[0]
-        variations = move_set[1:]
-        
-        st.markdown(f"<div class='premium-card'><b class='gold-text'>{selected_op}</b><br><small>Studying theory and variations.</small></div>", unsafe_allow_html=True)
-        v_choice = st.selectbox("Choose Variation (1 of 6)", variations)
-        
-        st.button("Learning Mode", use_container_width=True)
-        st.button("Practice Mode", use_container_width=True)
-
+        data = available[selected_op]
+        st.markdown(f"<div class='premium-card'><b class='gold-text'>{selected_op}</b></div>", unsafe_allow_html=True)
+        v_choice = st.selectbox("Choose Variation", data[1:])
+        st.button("Learning Mode")
+        if st.button("Practice Mode"): st.balloons()
     with col_board:
-        st.write(f"### Practice: {selected_op}")
-        # Board Logic
         board = chess.Board()
-        for m in starting_moves.split():
-            board.push_san(m)
-        
-        # Draw the Gold/Wood Board
+        for m in data[0].split(): board.push_san(m)
         board_svg = chess.svg.board(board, size=450, style=".square.light {fill: #c5a059;} .square.dark {fill: #8b4513;}")
         st.image(board_svg)
-else:
-    st.info(f"Adding more {level} openings for {side} soon!")
