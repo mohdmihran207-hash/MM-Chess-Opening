@@ -2,87 +2,82 @@ import streamlit as st
 import chess
 import chess.svg
 
-# 1. Page Configuration
+# --- PAGE CONFIG & PREMIUM CSS ---
 st.set_page_config(page_title="MM Chess Academy", layout="wide")
-
-# 2. Premium CSS (The Secret Sauce)
 st.markdown("""
     <style>
-    /* Main background with dark wood/gold vibe */
-    .stApp {
-        background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), 
-                    url('https://images.unsplash.com/photo-1529699211952-734e80c4d42b?auto=format&fit=crop&q=80&w=2000');
-        background-size: cover;
-        color: #E5E5E5;
-    }
-    
-    /* Premium Glass Cards */
+    .stApp { background: #0a0a0a; color: #d4af37; } /* Black & Gold */
     .premium-card {
         background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(251, 191, 36, 0.3);
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-
-    /* Gold Text */
-    .gold-text {
-        color: #fbbf24;
-        font-family: 'Serif';
-        font-weight: bold;
-    }
-
-    /* Progress Bar Color */
-    .stProgress > div > div > div > div {
-        background-color: #fbbf24;
+        border: 1px solid #d4af37;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Sidebar Navigation (Left side of your image)
-with st.sidebar:
-    st.markdown("<h1 style='color:#fbbf24;'>MM Chess</h1>", unsafe_allow_html=True)
-    st.button("🏠 Dashboard")
-    st.button("📖 Openings Library")
-    st.button("🏆 Achievements")
-    
-    st.markdown("---")
-    st.markdown("<div class='premium-card'><b>Motivation</b><br>'Push yourself every day.'</div>", unsafe_allow_html=True)
+# --- THE OPENING DATABASE ---
+# Format: "Opening Name": ["Variation 1 Moves", "Variation 2 Moves", ...]
+WHITE_OPENINGS = {
+    "Beginner": {
+        "Italian Game": ["e4 e5 Nf3 Nc6 Bc4", "e4 e5 Nf3 Nc6 Bc4 Bc5", "e4 e5 Nf3 Nc6 Bc4 Nf6"],
+        "Ruy Lopez": ["e4 e5 Nf3 Nc6 Bb5", "e4 e5 Nf3 Nc6 Bb5 a6", "e4 e5 Nf3 Nc6 Bb5 Nf6"],
+        # Add 3 more for total 5 Beginner
+    },
+    "Intermediate": {
+        "Sicilian: Alapin": ["e4 c5 c3", "e4 c5 c3 d5", "e4 c5 c3 Nf6"],
+        "Queen's Gambit": ["d4 d5 c4", "d4 d5 c4 e6", "d4 d5 c4 dxc4"],
+        # Add 13 more for total 15 Intermediate
+    },
+    "Advanced": {
+        "Catalan": ["d4 Nf6 c4 e6 g3", "d4 d5 c4 e6 Nf3 Nf6 g3"],
+        # Add 4 more for total 5 Advanced
+    }
+}
 
-# 4. Main Dashboard Area
-st.markdown("<h1 style='text-align: left;'>Future Grandmaster 🚀</h1>", unsafe_allow_html=True)
-st.write("Explore our comprehensive chess openings.")
+# --- APP LAYOUT ---
+st.title("🏆 MM CHESS ACADEMY")
 
-# Top Row: Stats (Score, Lessons, Progress)
-c1, c2, c3 = st.columns(3)
-with c1:
-    st.markdown("<div class='premium-card'><span class='gold-text'>Score</span><br><h2>240</h2></div>", unsafe_allow_html=True)
-with c2:
-    st.markdown("<div class='premium-card'><span class='gold-text'>Progress</span><br><h2>40%</h2></div>", unsafe_allow_html=True)
-    st.progress(0.4)
-with c3:
-    st.markdown("<div class='premium-card'><span class='gold-text'>Lessons Done</span><br><h2>12</h2></div>", unsafe_allow_html=True)
+# Motivation & Progress Card
+st.markdown(f"""
+<div class="premium-card">
+    <h3>Future Grandmaster Progress</h3>
+    <p><b>Motivation:</b> 100% 🔥 | <b>Portions Completed:</b> 2 / 40</p>
+</div>
+""", unsafe_allow_html=True)
 
-# 5. The "Popular Openings" section
-st.markdown("### Popular Openings")
-tab1, tab2, tab3 = st.tabs(["White", "Black", "All"])
+# Sidebar Selectors
+st.sidebar.header("Select Your Path")
+side = st.sidebar.radio("I want to learn for:", ["White", "Black"])
+level = st.sidebar.selectbox("Difficulty", ["Beginner", "Intermediate", "Advanced"])
 
-with tab1:
-    col_w1, col_w2 = st.columns(2)
-    with col_w1:
-        st.markdown("<div class='premium-card'><b>Ruy Lopez</b><br><small>White opens the bishop...</small></div>", unsafe_allow_html=True)
-        st.markdown("<div class='premium-card'><b>Italian Game</b><br><small>One of the great moves...</small></div>", unsafe_allow_html=True)
-    with col_w2:
-        st.markdown("<div class='premium-card'><b>Sicilian Defense</b><br><small>The most popular response...</small></div>", unsafe_allow_html=True)
-        st.markdown("<div class='premium-card'><b>Queen's Gambit</b><br><small>One of the oldest openings...</small></div>", unsafe_allow_html=True)
+# Get the list of openings based on choice
+current_db = WHITE_OPENINGS[level] # We'll add BLACK_OPENINGS next
+opening_name = st.sidebar.selectbox("Select Opening", list(current_db.keys()))
+variation_list = current_db[opening_name]
+selected_var = st.sidebar.selectbox("Select Variation", variation_list)
 
-# 6. Learning Board at Bottom
-st.divider()
-st.subheader("Interactive Practice Board")
-board = chess.Board()
-board_svg = chess.svg.board(board, size=400, style="""
-    .square.light { fill: #d1b48c; }
-    .square.dark { fill: #8b4513; }
-""")
-st.image(board_svg, width=450)
+# --- BOARD LOGIC ---
+if 'board' not in st.session_state:
+    st.session_state.board = chess.Board()
+
+# Function to play the variation moves
+def play_variation(move_string):
+    temp_board = chess.Board()
+    for move in move_string.split():
+        temp_board.push_san(move)
+    return temp_board
+
+st.session_state.board = play_variation(selected_var)
+
+# Display Board
+col1, col2 = st.columns([2, 1])
+with col1:
+    st.image(chess.svg.board(st.session_state.board, size=450))
+with col2:
+    st.success(f"Studying: {opening_name}")
+    st.write(f"**Moves:** {selected_var}")
+    if st.button("Reset to Start"):
+        st.session_state.board.reset()
+        st.rerun()
