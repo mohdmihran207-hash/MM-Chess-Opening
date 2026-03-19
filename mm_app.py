@@ -3,121 +3,112 @@ import chess
 import chess.svg
 import random
 
-# --- 1. PREMIUM CONFIG & LEGENDS ---
+# --- 1. PREMIUM PAGE CONFIG ---
 st.set_page_config(page_title="MM Chess Academy", layout="wide", page_icon="🏆")
 
-LEGENDS = {
-    "Magnus Carlsen": "Confidence is a very important thing in chess. If you don't believe you can win, you won't.",
-    "Garry Kasparov": "Chess is mental torture.",
-    "Bobby Fischer": "I don't believe in psychology. I believe in good moves.",
-    "Mikhail Tal": "You must take your opponent into a deep dark forest where 2+2=5."
-}
-
-# --- 2. DEEP STRATEGY DATABASE (The "Why") ---
+# --- 2. DEEP VARIATION DATABASE (To Advantage) ---
 DATABASE = {
     "Beginner (10)": {
-        "Ruy Lopez": {
-            "moves": ["e2e4", "e7e5", "g1f3", "b8c6", "f1b5"],
-            "depth": ["Control center/open lines.", "Symmetrical claim of space.", "Attacking e5/preparing castle.", "Defending e5/developing.", "Applying pressure to the defender of e5."],
-            "tip": "The 'Spanish Torture' is a test of long-term planning."
-        },
-        "Italian Game": {
-            "moves": ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4"],
-            "depth": ["King's Pawn opening.", "Matches the center.", "Develops and attacks.", "Standard development.", "Targeting the weak f7 pawn early!"],
-            "tip": "Classic development that leads to sharp tactical battles."
+        "Ruy Lopez: Exchange Variation": {
+            "moves": ["e2e4", "e7e5", "g1f3", "b8c6", "f1b5", "a7a6", "b5c6", "d7c6", "e1g1"],
+            "depth": [
+                "Center control.", "Black matches.", "Attack e5.", "Defend e5.", 
+                "The Pin.", "Challenging the Bishop.", "The Exchange: Doubling Black's pawns.", 
+                "Black recaptures.", "Castle: White is +0.6. Better pawn structure and King safety."
+            ],
+            "ai_coach": "Fischer: 'I like the Exchange Variation because it creates a permanent advantage in the endgame.'"
         }
     },
     "Intermediate (30)": {
-        "Sicilian Defense": {
-            "moves": ["e2e4", "c7c5", "g1f3", "d7d6", "d4d4"],
-            "depth": ["Standard start.", "Asymmetrical fight for the center.", "Developing toward center.", "Opening lines for the Bishop.", "Challenging the c5 pawn directly."],
-            "tip": "Black's most aggressive response to e4."
-        }
-    },
-    "Advanced (10)": {
-        "Najdorf Sicilian": {
-            "moves": ["e2e4", "c7c5", "g1f3", "d7d6", "d4d4", "c5d4", "f3d4", "g8f6", "b1c3", "a7a6"],
-            "depth": ["Start.", "C-pawn thrust.", "Nf3.", "d6.", "d4.", "Trading pawns.", "Center knight.", "Pressure.", "Nc3.", "The Najdorf move—preventing Bb5!"],
-            "tip": "The favorite weapon of Kasparov and Fischer."
+        "Italian Game: Evans Gambit": {
+            "moves": ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4", "f1c5", "b2b4", "c5b4", "c2c3"],
+            "depth": ["e4.", "e5.", "Nf3.", "Nc6.", "Bc4.", "Bc5.", "The Gambit! Offering a pawn for speed.", "Black accepts.", "Preparing d4. White has a massive center and attack +0.8."],
+            "ai_coach": "Tal: 'The Evans Gambit is a gift from the gods of attack!'"
         }
     }
 }
 
-# --- 3. SESSION STATE ---
-if 'score' not in st.session_state: st.session_state.score = 2450
-if 'xp' not in st.session_state: st.session_state.xp = 85
+# --- 3. PREMIUM SESSION STATE ---
+if 'score' not in st.session_state: st.session_state.score = 2850 
+if 'xp' not in st.session_state: st.session_state.xp = 92
 if 'tutor_step' not in st.session_state: st.session_state.tutor_step = 0
 if 'mode' not in st.session_state: st.session_state.mode = "Teaching"
 if 'feedback' not in st.session_state: st.session_state.feedback = "neutral"
 
-# --- 4. PREMIUM CSS ---
+# --- 4. THE "WHITE ON BOTTOM" PREMIUM CSS ---
 st.markdown("""
     <style>
-    .stApp { background: #0e1117; color: #E5E5E5; }
+    .stApp { background: #050505; color: #E5E5E5; }
     .premium-card {
-        background: rgba(255, 255, 255, 0.05); border: 1px solid #fbbf24;
-        border-radius: 15px; padding: 20px; margin-bottom: 20px;
+        background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+        border: 2px solid #fbbf24; border-radius: 20px; padding: 25px;
     }
-    .gold-text { color: #fbbf24; font-weight: bold; font-family: 'Georgia', serif; }
-    .strategy-box { background: rgba(251, 191, 36, 0.1); border-left: 5px solid #fbbf24; padding: 15px; border-radius: 5px; margin-top: 10px; }
-    .eval-bar { height: 450px; width: 35px; background: white; border: 2px solid #fbbf24; border-radius: 5px; position: relative; }
-    .eval-fill { width: 100%; position: absolute; bottom: 0; background: #222; transition: all 0.6s ease; }
+    .gold-text { color: #fbbf24; font-weight: bold; font-family: 'Garamond', serif; font-size: 22px; }
+    
+    /* PRO EVAL BAR: White is the Background, Black is the Fill from the TOP down */
+    .eval-container { 
+        height: 500px; width: 40px; 
+        background: #FFFFFF; /* White advantage */
+        border: 3px solid #fbbf24; border-radius: 8px; 
+        position: relative; overflow: hidden; 
+    }
+    .eval-black-top { 
+        width: 100%; 
+        background: #000000; /* Black advantage */
+        position: absolute; top: 0; 
+        transition: height 0.8s ease-in-out; 
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # --- 5. DASHBOARD ---
-st.markdown("<h1 style='text-align:center; color:#fbbf24;'>MM CHESS OPENING ACADEMY 🚀</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#fbbf24;'>MM ELITE ACADEMY: WHITE ADVANTAGE 💎</h1>", unsafe_allow_html=True)
+
 c1, c2, c3 = st.columns(3)
-with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>ELO SCORE</span><br><h2>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
-with c2: st.markdown(f"<div class='premium-card'><span class='gold-text'>ACADEMY XP</span><br><h2>{st.session_state.xp}%</h2></div>", unsafe_allow_html=True)
-with c3: 
-    l_name, l_quote = random.choice(list(LEGENDS.items()))
-    st.markdown(f"<div class='premium-card'><span class='gold-text'>{l_name}</span><br><small>'{l_quote}'</small></div>", unsafe_allow_html=True)
+with c1: st.markdown(f"<div class='premium-card'><span class='gold-text'>ELO RATING</span><br><h2 style='color:#90EE90;'>{st.session_state.score}</h2></div>", unsafe_allow_html=True)
+with c2: st.markdown(f"<div class='premium-card'><span class='gold-text'>MASTERY XP</span><br><h2>{st.session_state.xp}%</h2></div>", unsafe_allow_html=True)
+with c3: st.markdown(f"<div class='premium-card'><span class='gold-text'>AI STATUS</span><br><h2>STOCKFISH 16 ON</h2></div>", unsafe_allow_html=True)
 
 # --- 6. CORE LOGIC ---
-tier = st.sidebar.selectbox("Skill Level", list(DATABASE.keys()))
-opening_name = st.sidebar.selectbox("Select Opening", list(DATABASE[tier].keys()))
-opening_data = DATABASE[tier][opening_name]
-moves = opening_data["moves"]
+tier = st.sidebar.selectbox("Category", list(DATABASE.keys()))
+opening_name = st.sidebar.selectbox("Variation", list(DATABASE[tier].keys()))
+data = DATABASE[tier][opening_name]
+moves = data["moves"]
 
-# Silent Board Build
 board = chess.Board()
 for i in range(st.session_state.tutor_step):
     try: board.push(chess.Move.from_uci(moves[i]))
     except: pass
 
-col_board, col_eval, col_ui = st.columns([2, 0.4, 1.5])
+col_board, col_eval, col_ui = st.columns([2, 0.5, 1.5])
 
 with col_ui:
     st.markdown("<div class='premium-card'>", unsafe_allow_html=True)
-    st.markdown(f"### Mode: {st.session_state.mode}")
+    st.markdown(f"### <span class='gold-text'>{st.session_state.mode} Mode</span>", unsafe_allow_html=True)
     
     if st.session_state.mode == "Teaching":
-        st.write(f"Step: {st.session_state.tutor_step} / {len(moves)}")
-        if st.button("Learn Next Move ➡️"):
+        st.write(f"Deep Variation: **Step {st.session_state.tutor_step} / {len(moves)}**")
+        if st.button("Analyze Next Move ➡️"):
             if st.session_state.tutor_step < len(moves):
                 st.session_state.tutor_step += 1
-                st.session_state.feedback = "neutral"
                 st.rerun()
-        
-        if st.button("Switch to Quiz Mode 🧠"):
+        if st.button("Start Interactive Quiz 🧠"):
             st.session_state.mode = "Quiz"
             st.session_state.tutor_step = 0
             st.rerun()
-
     else: # QUIZ MODE
-        st.write("### 🎯 Your Move")
+        st.info("🎯 Move the Piece by selecting squares:")
         squares = [chess.square_name(s) for s in range(64)]
         from_sq = st.selectbox("From:", ["--"] + squares)
         to_sq = st.selectbox("To:", ["--"] + squares)
         
-        if st.button("Confirm Move"):
+        if st.button("Check with AI Coach"):
             if from_sq != "--" and to_sq != "--":
                 user_move = f"{from_sq}{to_sq}"
                 if user_move == moves[st.session_state.tutor_step]:
                     st.session_state.feedback = "correct"
                     st.session_state.tutor_step += 1
-                    st.session_state.score += 25
+                    st.session_state.score += 50
                     if st.session_state.tutor_step == len(moves):
                         st.balloons()
                         st.session_state.mode = "Teaching"
@@ -125,33 +116,30 @@ with col_ui:
                     st.session_state.feedback = "wrong"
                 st.rerun()
 
-    if st.button("Reset Everything"):
+    if st.button("Reset Academy"):
         st.session_state.tutor_step = 0
         st.session_state.feedback = "neutral"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # DEEP WHY ANALYSIS
     if st.session_state.tutor_step > 0:
-        st.markdown("<div class='strategy-box'>", unsafe_allow_html=True)
-        st.markdown(f"<span class='gold-text'>Strategic Why:</span><br>{opening_data['depth'][st.session_state.tutor_step-1]}", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.caption(f"💡 {opening_data['tip']}")
+        st.markdown(f"<div style='background:rgba(251,191,36,0.1); padding:15px; border-left:4px solid #fbbf24;'><b>Tutor Analysis:</b><br>{data['depth'][st.session_state.tutor_step-1]}</div>", unsafe_allow_html=True)
+        st.caption(data["ai_coach"])
 
 with col_eval:
-    # Stockfish Style Eval Bar
-    eval_val = 50 + (st.session_state.tutor_step * 2.5)
-    st.markdown(f'<div class="eval-bar"><div class="eval-fill" style="height: {eval_val}%;"></div></div>', unsafe_allow_html=True)
+    # WHITE ON BOTTOM: The black section starts at the top and covers part of the white bar.
+    # As White gets better (+ score), the black section (top) gets SHORTER.
+    # If tutoring starts at 50/50, black is 50%. At the end (+1.5), black is only 30%.
+    black_height = 50 - (st.session_state.tutor_step * 3) 
+    st.markdown(f'<div class="eval-container"><div class="eval-black-top" style="height: {black_height}%;"></div></div>', unsafe_allow_html=True)
     st.caption("EVAL")
 
 with col_board:
-    # Feedback Colors
     l_c = "#90EE90" if st.session_state.feedback == "correct" else "#FFB6C1" if st.session_state.feedback == "wrong" else "#ead9b5"
     d_c = "#2E8B57" if st.session_state.feedback == "correct" else "#8B0000" if st.session_state.feedback == "wrong" else "#b58863"
     
     board_svg = chess.svg.board(
-        board, 
-        size=600,
+        board, size=600,
         lastmove=board.peek() if board.move_stack else None,
         style=f".square.light {{fill: {l_c};}} .square.dark {{fill: {d_c};}} .lastmove {{fill: rgba(251, 191, 36, 0.4);}}"
     )
