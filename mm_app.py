@@ -2,82 +2,84 @@ import streamlit as st
 import chess
 import chess.svg
 
-# --- PAGE CONFIG & PREMIUM CSS ---
+# --- PREMIUM STYLING ---
 st.set_page_config(page_title="MM Chess Academy", layout="wide")
+
 st.markdown("""
     <style>
-    .stApp { background: #0a0a0a; color: #d4af37; } /* Black & Gold */
-    .premium-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid #d4af37;
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
+    .stApp {
+        background: #050505; /* Deep Black */
+        color: #E5E5E5;
     }
+    .opening-card {
+        background: rgba(255, 215, 0, 0.05);
+        border: 1px solid #D4AF37; /* Gold Border */
+        border-radius: 12px;
+        padding: 20px;
+        transition: 0.3s;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .opening-card:hover {
+        background: rgba(255, 215, 0, 0.1);
+        border-color: #FFD700;
+        transform: translateY(-5px);
+    }
+    .gold-title { color: #D4AF37; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- THE OPENING DATABASE ---
-# Format: "Opening Name": ["Variation 1 Moves", "Variation 2 Moves", ...]
-WHITE_OPENINGS = {
-    "Beginner": {
-        "Italian Game": ["e4 e5 Nf3 Nc6 Bc4", "e4 e5 Nf3 Nc6 Bc4 Bc5", "e4 e5 Nf3 Nc6 Bc4 Nf6"],
-        "Ruy Lopez": ["e4 e5 Nf3 Nc6 Bb5", "e4 e5 Nf3 Nc6 Bb5 a6", "e4 e5 Nf3 Nc6 Bb5 Nf6"],
-        # Add 3 more for total 5 Beginner
-    },
-    "Intermediate": {
-        "Sicilian: Alapin": ["e4 c5 c3", "e4 c5 c3 d5", "e4 c5 c3 Nf6"],
-        "Queen's Gambit": ["d4 d5 c4", "d4 d5 c4 e6", "d4 d5 c4 dxc4"],
-        # Add 13 more for total 15 Intermediate
-    },
-    "Advanced": {
-        "Catalan": ["d4 Nf6 c4 e6 g3", "d4 d5 c4 e6 Nf3 Nf6 g3"],
-        # Add 4 more for total 5 Advanced
-    }
-}
+# --- APP HEADER ---
+st.markdown("<h1 style='text-align: center; color: #D4AF37;'>MM CHESS ACADEMY</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Master the 40 Most Essential Openings</p>", unsafe_allow_html=True)
 
-# --- APP LAYOUT ---
-st.title("🏆 MM CHESS ACADEMY")
+# --- SIDEBAR: NAV & PROGRESS ---
+with st.sidebar:
+    st.markdown("<h2 class='gold-title'>Your Stats</h2>", unsafe_allow_html=True)
+    st.metric("Progress", "15%", "+2% Today")
+    st.progress(0.15)
+    
+    st.divider()
+    side = st.radio("Choose Side:", ["White (20 Openings)", "Black (20 Openings)"])
+    level = st.selectbox("Difficulty:", ["Beginner", "Intermediate", "Advanced"])
 
-# Motivation & Progress Card
-st.markdown(f"""
-<div class="premium-card">
-    <h3>Future Grandmaster Progress</h3>
-    <p><b>Motivation:</b> 100% 🔥 | <b>Portions Completed:</b> 2 / 40</p>
-</div>
-""", unsafe_allow_html=True)
+# --- OPENING GRID ---
+st.subheader(f"Top {level} Openings for {side}")
 
-# Sidebar Selectors
-st.sidebar.header("Select Your Path")
-side = st.sidebar.radio("I want to learn for:", ["White", "Black"])
-level = st.sidebar.selectbox("Difficulty", ["Beginner", "Intermediate", "Advanced"])
+# Example logic for 1 of the 20 cards
+col1, col2, col3 = st.columns(3)
 
-# Get the list of openings based on choice
-current_db = WHITE_OPENINGS[level] # We'll add BLACK_OPENINGS next
-opening_name = st.sidebar.selectbox("Select Opening", list(current_db.keys()))
-variation_list = current_db[opening_name]
-selected_var = st.sidebar.selectbox("Select Variation", variation_list)
+with col1:
+    st.markdown("""
+        <div class="opening-card">
+            <h3 class="gold-title">The Ruy Lopez</h3>
+            <p>6 Variations Available</p>
+            <small>Success Rate: 54%</small>
+        </div>
+    """, unsafe_allow_html=True)
+    if st.button("Start Training: Ruy Lopez"):
+        st.session_state.current_opening = "Ruy Lopez"
 
-# --- BOARD LOGIC ---
+# --- THE TRAINING BOARD ---
+st.divider()
+col_board, col_info = st.columns([2, 1])
+
 if 'board' not in st.session_state:
     st.session_state.board = chess.Board()
 
-# Function to play the variation moves
-def play_variation(move_string):
-    temp_board = chess.Board()
-    for move in move_string.split():
-        temp_board.push_san(move)
-    return temp_board
+with col_board:
+    # Customizable board colors (Gold/Dark theme)
+    board_svg = chess.svg.board(st.session_state.board, size=450, style="""
+        .square.light { fill: #2d2d2d; }
+        .square.dark { fill: #1a1a1a; }
+        .piece { filter: drop-shadow(2px 2px 2px black); }
+    """)
+    st.image(board_svg)
 
-st.session_state.board = play_variation(selected_var)
-
-# Display Board
-col1, col2 = st.columns([2, 1])
-with col1:
-    st.image(chess.svg.board(st.session_state.board, size=450))
-with col2:
-    st.success(f"Studying: {opening_name}")
-    st.write(f"**Moves:** {selected_var}")
-    if st.button("Reset to Start"):
-        st.session_state.board.reset()
-        st.rerun()
+with col_info:
+    st.markdown("<h3 class='gold-title'>Training Mode</h3>", unsafe_allow_html=True)
+    st.info("Follow the 'Main Line' variation to continue.")
+    move = st.text_input("Enter Move:")
+    if st.button("Submit Move"):
+        # Logic to check against the 6 variations
+        pass
